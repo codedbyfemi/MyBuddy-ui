@@ -1,5 +1,8 @@
+import { login } from "@/libs/api/auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { Alert } from "react-native";
 
 // --- Icons ---
 const Icons = {
@@ -30,25 +33,33 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    // 1. Retrieve the registered user from local storage
-    const storedUser = localStorage.getItem('registeredUser');
 
-    if (!storedUser) {
-      alert("No account found. Please Sign Up first.");
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Email and password are required.");
       return;
     }
 
-    const user = JSON.parse(storedUser);
+    try {
+      setLoading(true);
 
-    // 2. Check Credentials
-    if (email === user.email && password === user.password) {
-      // Success!
-      router.replace('/home');
-    } else {
-      // Failed
-      alert("Invalid email or password. Please try again.");
+      const response = await login({
+        email,
+        password,
+      });
+
+      // Save user session securely
+      await AsyncStorage.setItem("token", response.token);
+      if (rememberMe) await AsyncStorage.setItem("user", JSON.stringify(response.user));
+
+      router.replace("/home");
+    } catch (err) {
+      Alert.alert("Login Failed", "Invalid email or password.");
+    } finally {
+      setLoading(false);
     }
   };
 
