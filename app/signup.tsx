@@ -1,5 +1,7 @@
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { Alert } from "react-native";
+import { signup } from "../libs/api/auth"; // <-- make sure the path is correct
 
 // --- Icons ---
 const Icons = {
@@ -30,22 +32,30 @@ export default function SignUpPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     if (!email || !password || !fullName) {
-      alert("Please fill in all fields");
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
-    // 1. Create a user object
-    const user = { fullName, email, password };
+    setLoading(true);
 
-    // 2. Save to Local Storage (Mocking a Database)
-    localStorage.setItem('registeredUser', JSON.stringify(user));
+    try {
+      const response = await signup({
+        name: fullName,
+        email,
+        password
+      });
 
-    // 3. Alert and Redirect
-    alert("Account created successfully! Please sign in.");
-    router.replace('/'); // Redirect to Login page
+      Alert.alert("Success", "Account created successfully!");
+      router.replace("/"); // redirect to login
+    } catch (err: any) {
+      Alert.alert("Signup Failed", err?.message || "Something went wrong");
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -119,14 +129,15 @@ export default function SignUpPage() {
 
           <button 
             onClick={handleSignUp}
+            disabled={loading}
             className="w-full bg-gradient-to-r from-[#0066FF] to-[#00B2FF] hover:opacity-90 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] mt-4"
           >
-            Create Account
+            {loading ? "Creating Account..." : "Create Account"}
           </button>
 
           <div className="text-center mt-4">
             <p className="text-sm text-gray-500">
-              Already have an account?{' '}
+              Already have an account?{" "}
               <Link href="/" className="text-blue-600 font-semibold hover:underline">
                 Sign In
               </Link>
